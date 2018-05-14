@@ -1,110 +1,273 @@
 <?php 
 
 
-require("conexion.php");
+require("model.php");
 
-
-class Crud extends Conexion
+/**
+* 
+*/
+class Registro 
 {
-		
+	//valida usuario 
+	public function validaUsuarioController($param){
 
-		public function validaUsuario($param){
+		$rpt = Crud::validaUsuario($param);	
 
-			$stmt = Conexion::conectar()->prepare("SELECT * FROM  empleados WHERE email = :user and dni = :dni");	
-		 	$stmt->bindParam(":user",$param["usuario"],PDO::PARAM_STR);
-		 	$stmt->bindParam(":dni",$param["password"],PDO::PARAM_STR);
+		return 	$rpt;
+	}
 
-		 	$stmt->execute();
-		 	$rpt = $stmt->rowCount();
+	//valida ingreso
+	public function asistenciaHoyController($param){
 
-		 	if($rpt){
-		 		return TRUE;
+		$rpt = Crud::verificaAsistenciaHoy($param);	
 
-		 	}else{
-		 		return FALSE;
-		 	}
-		 	
+		return 	$rpt;
+	}
+
+	//registra ingreso
+	public function registroAsistenciaController($param){
+		$rpt = Crud::registroAsistencia($param);
+		return $rpt;
+	}
+
+	//lista asistencia
+	public function listaAsistenciaController($param){
+
+		$rpt = Crud::listaAsistencia($param);
+		return $rpt;
+	}
+
+}
+
+
+class Salida 
+{
+	//valida usuario 
+	public function validaUsuarioController($param){
+
+		$rpt = Crud::validaUsuario($param);	
+
+		return 	$rpt;
+	}
+
+	//valida ingreso
+	public function asistenciaHoyController($param){
+		$rpt = Crud::verificaAsistenciaHoy($param);	
+		return 	$rpt;
+	}
+
+	//registra salida
+	public function registroAsistenciaController($param){
+		$rpt = Crud::registroAsistencia($param);
+		return $rpt;
+	}
+
+	//lista asistencia
+	public function listaAsistenciaController($param){
+
+		$rpt = Crud::listaAsistencia($param);
+		return $rpt;
+	}
+
+}
+
+/****************************************************/
+
+/****************************************************/
+
+/*
+
+envio de datos desde ajax
+
+-user
+-pass
+-tipo : I o S
+
+valido el tipo : I o S
+	- hago 2 clases (ingreso, salida) php.
+	- depende del tipo, instancio las clases php
+	- acceso al obj y paso como parametros la data
+
+
+*/
+
+
+
+
+$user = $_POST["email"];
+$pass = $_POST["pwd"];
+$type = $_POST["type"];
+
+
+if($type == "I"){
+
+	//INGRESO
+
+	$data = [
+	"usuario" => $user,
+	"password" => $pass
+	];
+
+
+	$obj = new Registro();
+
+
+	if($obj->validaUsuarioController($data) == "A"){
+
+		//echo "A";
+		if($obj->asistenciaHoyController($data) == "D"){
+
+			//echo "D";
+			$obj->registroAsistenciaController($data);
+			//echo "insertado";
+			
+			$obj->listaAsistenciaController($data);
+
+			
+		}else{
+			echo "C"; // marco hoy
 		}
 
+	}else{
 
-		 public  function registroAsistencia($data){
-
-		 	$stmt = Conexion::conectar()->prepare("INSERT INTO registro (user, fecha_ing) VALUES (:u,now())");	
-		 	$stmt->bindParam(":u",$data["usuario"],PDO::PARAM_STR);
-		 	//$stmt->bindParam(":f",date("Y-m-d H:i:s", strtotime($data["fecha"])),PDO::PARAM_ST);
-		 	
-		 	if($stmt->execute()){
-		 		echo "insertado";
-		 	}else{
-		 		echo "error insertado";
-		 	}
-
-		 	//$stmt->close();
-
-		 }
-
-		  public  function listaAsistencia($data){
-		  								
-		 	$stmt = Conexion::conectar()->prepare("SELECT fecha_ing FROM  registro WHERE user = :user");	
-		 	$stmt->bindParam(":user",$data["usuario"],PDO::PARAM_STR);
-		 	$stmt->execute();
-		 	$row =  $stmt->fetch();
-		 	echo $row["fecha_ing"];
-		 	//return $stmt->fetch();
-		 }
+		echo "B"; //Usuario y/o clave incorrecto
+	}
 
 
-		 public  function verificaAsistenciaHoy($data){
+}else {
 
-		 	$hoy = date("Y-m-d");   // 2001-03-10 17:16:18 
-							
-		 	$stmt = Conexion::conectar()->prepare("SELECT fecha_ing FROM  registro WHERE user = :user ");	
-		 	$stmt->bindParam(":user",$data["usuario"],PDO::PARAM_STR);
-		 	$stmt->execute();
-		 	$row =  $stmt->fetch();
+	//SALIDA
 
-		 	$fecha_ing = substr($row["fecha_ing"],0,10);
+	$data = [
+	"usuario" => $user,
+	"password" => $pass
+	];
 
-		 	if ( $fecha_ing == $hoy ){
 
-		 		echo "ya marco";
+	$obj = new Salida();
 
-		 	}else{
-		 		echo "no marco";
-		 	}
-		 }
+
+	if($obj->validaUsuarioController($data) == "A"){
+
+		//echo "A";
+		if($obj->asistenciaHoyController($data) == "C"){
+
+			//echo "C";
+			$obj->registroAsistenciaController($data);
+			//echo "insertado";
+			
+			$obj->listaAsistenciaController($data);
+
+			
+		}else{
+			echo "D"; // No marco hoy
+		}
+
+	}else{
+
+		echo "B"; //Usuario y/o clave incorrecto
+	}
+
 
 }
 
 
 
-/****************************************************/
-
-$user = $_POST["email"];
-$pass = $_POST["pwd"];
 
 
-$obj = new Crud();
-
-$data = [
-	"usuario" => $user,
-	"password" => $pass
-];
 
 
-$rpt = $obj->validaUsuario($data);
+// $user = $_POST["email"];
+// $pass = $_POST["pwd"];
+// $type = $_POST["type"];
 
- if($rpt){
-
- 	$obj->verificaAsistenciaHoy($data);
-
-	//echo $obj->registroAsistencia($data);
-	//echo $obj->listaAsistencia($data);
+// echo $type;
+// exit();
 
 
- }else{
- 	echo "Usuario y/o clave incorrecto 2";
- }
+// $obj = new Registro();
+
+// $data = [
+// 	"usuario" => $user,
+// 	"password" => $pass
+// ];
+
+
+
+
+
+//validacion 
+
+// if($obj->validaUsuarioController($data) == "A"){
+
+// 	//echo "A";
+// 	if($obj->asistenciaHoyController($data) == "D"){
+
+// 		//echo "D";
+// 		$obj->registroAsistenciaController($data);
+// 		//echo "insertado";
+		
+// 		$obj->listaAsistenciaController($data);
+
+		
+// 	}else{
+// 		echo "C"; // marco hoy
+// 	}
+
+// }else{
+
+// 	echo "B";
+// }
+
+
+
+/*****
+
+------------------------------
+PASOS VALIDACIONES 			 :
+------------------------------
+
+1 : Verificar Usuarios Existe en la BD.
+2 : Verificar Si Registro Hoy su Asistencia (Fecha) 
+	| + I : aparece Btn Salida. | ó | + I & S : aparece Msg Registro Completo. 
+
+3 : Insert de Registro (Fecha y Usuario)
+4 : Select de Registro Insertado (Fecha y Hora Hoy Reg.)
+
+-----
+
+Validando la salida:
+
+ - ya no validar si el registro existe
+ - insertar el nuevo registro | new campo  S
+ - Traer los Datos de la Salida y Entrada
+
+
+------------------------------------------------------------------------
+
+*****/
+
+
+
+/****
+
+--------------------
+CODIGOS DE ERRORES:
+--------------------
+
+ A : Usuario y/o clave Correcto 
+ B : Usuario y/o clave incorrecto
+
+ C : Marco Hoy
+ D : No Marco Hoy (INSERTA Y SELECCIONA)
+
+ E : Inserta Reg. Asis.
+ F : No Inserto Reg. Asis.
+
+ G : Select Reg. Asis.
+ H : No select Reg. Asis
+
+ *****/
 
 
  ?>
